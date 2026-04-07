@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
-import { FaEdit, FaTrash, FaEye } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 
 export default function Materials() {
   const [data, setData] = useState([]);
