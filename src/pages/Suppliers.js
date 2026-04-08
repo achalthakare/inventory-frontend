@@ -1,145 +1,355 @@
-// import React, { useState, useEffect } from 'react';
-// import { getSuppliers, addSupplier } from '../api/api';
-
-// function SuppliersPage() {
-//   const [suppliers, setSuppliers] = useState([]);
-//   const [orders, setOrders] = useState([]);
-//   const [form, setForm] = useState({ name:'', email:'', phone:'', location:'' });
-
-//   // Load suppliers + orders
-//   useEffect(() => {
-//     getSuppliers()
-//       .then(res => setSuppliers(res.data))
-//       .catch(err => console.error('Error fetching suppliers:', err));
-
-//     // Example orders (replace with API call if you have one)
-//     setOrders([
-//       { id:'PO-201', material:'Brass Rods', qty:'500 kg', status:'Delivered', date:'Mar 28, 2026' },
-//       { id:'PO-198', material:'Steel Sheets', qty:'200 sheets', status:'In Transit', date:'Mar 30, 2026' },
-//       { id:'PO-195', material:'Aluminum Bars', qty:'150 units', status:'Pending', date:'Apr 1, 2026' }
-//     ]);
-//   }, []);
-
-//   // Add supplier
-//   const handleAdd = async () => {
-//     try {
-//       const res = await addSupplier(form);
-//       setSuppliers([...suppliers, res.data]);
-//       setForm({ name:'', email:'', phone:'', location:'' });
-//     } catch (err) {
-//       console.error('Error adding supplier:', err);
-//     }
-//   };
-
-//   return (
-//     <div className="p-4 md:p-6">
-//       {/* Summary Cards */}
-//       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-//         <div className="bg-blue-600 text-white p-4 rounded shadow">
-//           <h4 className="text-lg font-bold">Total Suppliers</h4>
-//           <p className="text-2xl">{suppliers.length}</p>
-//         </div>
-//         <div className="bg-orange-500 text-white p-4 rounded shadow">
-//           <h4 className="text-lg font-bold">Active Orders</h4>
-//           <p className="text-2xl">{orders.length}</p>
-//         </div>
-//         <div className="bg-green-600 text-white p-4 rounded shadow">
-//           <h4 className="text-lg font-bold">On-Time Rate</h4>
-//           <p className="text-2xl">94%</p>
-//         </div>
-//       </div>
-
-//       {/* Main Layout */}
-//       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//         {/* Left: Suppliers */}
-//         <div className="bg-white shadow rounded p-4 md:p-6">
-//           <div className="flex justify-between items-center mb-4">
-//             <h2 className="text-xl font-bold">Supplier Management</h2>
-//             <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" onClick={handleAdd}>
-//               Add Supplier
-//             </button>
-//           </div>
-//           <input
-//             className="border p-2 w-full rounded mb-4"
-//             placeholder="Search suppliers..."
-//           />
-
-//           <div className="space-y-4">
-//             {suppliers.map(s=>(
-//               <div key={s.id} className="border rounded p-4 shadow-sm">
-//                 <h3 className="font-bold text-lg">{s.name}</h3>
-//                 <p>📧 {s.email}</p>
-//                 <p>📞 {s.phone}</p>
-//                 <p>📍 {s.location}</p>
-//                 <p className={s.status==='On Time' ? 'text-green-600' : 'text-red-600'}>
-//                   {s.status}
-//                 </p>
-//                 <p>Rating: {s.rating}/5.0</p>
-//                 <p>Pending Orders: {s.pending_orders}</p>
-//               </div>
-//             ))}
-//           </div>
-//         </div>
-
-//         {/* Right: Recent Orders */}
-//         <div className="bg-purple-600 text-white shadow rounded p-4 md:p-6">
-//           <h2 className="text-xl font-bold mb-4">Recent Orders</h2>
-//           <ul className="space-y-3">
-//             {orders.map(o=>(
-//               <li key={o.id} className="bg-purple-700 p-3 rounded">
-//                 <p className="font-semibold">{o.id} – {o.material}</p>
-//                 <p>{o.qty}</p>
-//                 <p>📅 {o.date}</p>
-//                 <p>Status: <span className="font-bold">{o.status}</span></p>
-//               </li>
-//             ))}
-//           </ul>
-//           <div className="mt-6 flex flex-col sm:flex-row gap-3">
-//             <button className="bg-white text-purple-700 px-4 py-2 rounded hover:bg-gray-200">Place New Order</button>
-//             <button className="bg-white text-purple-700 px-4 py-2 rounded hover:bg-gray-200">View All Orders</button>
-//             <button className="bg-white text-purple-700 px-4 py-2 rounded hover:bg-gray-200">Supplier Reports</button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default SuppliersPage;
-
-
-
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api/api";
+import {
+  FaEdit,
+  FaTrash,
+  FaEnvelope,
+  FaPhone,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
 
 export default function Suppliers() {
+  const navigate = useNavigate();
+
   const [data, setData] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
+  const [form, setForm] = useState({
+    name: "",
+    contact_email: "",
+    contact_phone: "",
+    location: "",
+    rating: "",
+    status: "On Time",
+  });
+
+  const [editId, setEditId] = useState(null);
+
+  // ✅ FETCH DATA
+  const fetchData = async () => {
+    try {
+      const res = await API.get("/suppliers");
+      setData(res.data);
+
+      const orderRes = await API.get("/orders");
+      setOrders(orderRes.data.slice(0, 3)); // latest 3
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
-    API.get("/suppliers").then(res => setData(res.data));
+    fetchData();
   }, []);
 
+  // ✅ SUBMIT
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      if (editId) {
+        await API.put(`/suppliers/${editId}`, form);
+      } else {
+        await API.post("/suppliers", form);
+      }
+
+      setForm({
+        name: "",
+        contact_email: "",
+        contact_phone: "",
+        location: "",
+        rating: "",
+        status: "On Time",
+      });
+
+      setEditId(null);
+      setShowModal(false);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // ✅ EDIT
+  const handleEdit = (s) => {
+    setForm(s);
+    setEditId(s.id);
+    setShowModal(true);
+  };
+
+  // ✅ DELETE
+  const handleDelete = async (id) => {
+    if (window.confirm("Delete supplier?")) {
+      await API.delete(`/suppliers/${id}`);
+      fetchData();
+    }
+  };
+
+  // ✅ FILTER
+  const filtered = data.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold">Suppliers</h2>
+    <div className="p-6 bg-gray-100 min-h-screen flex gap-6">
 
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th><th>Phone</th><th>Status</th>
-          </tr>
-        </thead>
+      {/* LEFT SECTION */}
+      <div className="w-2/3">
 
-        <tbody>
-          {data.map(s => (
-            <tr key={s.id}>
-              <td>{s.name}</td>
-              <td>{s.contact_phone}</td>
-              <td>{s.status}</td>
-            </tr>
+        {/* 🔥 TOP CARDS */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+
+          <div className="bg-white p-4 rounded-lg border">
+            <p className="text-gray-500 text-sm">Total Suppliers</p>
+            <h2 className="text-xl font-semibold">{data.length}</h2>
+          </div>
+
+          <div className="bg-white p-4 rounded-lg border">
+            <p className="text-gray-500 text-sm">Active Orders</p>
+            <h2 className="text-xl font-semibold">
+              {data.reduce((sum, s) => sum + (s.active_orders || 0), 0)}
+            </h2>
+          </div>
+
+          <div className="bg-white p-4 rounded-lg border">
+            <p className="text-gray-500 text-sm">On-Time Rate</p>
+            <h2 className="text-xl font-semibold">
+              {data.length > 0
+                ? Math.round(
+                    (data.filter((s) => s.status === "On Time").length /
+                      data.length) *
+                      100
+                  )
+                : 0}
+              %
+            </h2>
+          </div>
+
+        </div>
+
+        {/* HEADER */}
+        <div className="bg-white p-4 rounded-lg border flex justify-between mb-4">
+          <input
+            type="text"
+            placeholder="Search suppliers..."
+            className="border p-2 rounded w-1/2"
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            + Add Supplier
+          </button>
+        </div>
+
+        {/* SUPPLIERS LIST */}
+        <div className="flex flex-col gap-3">
+          {filtered.map((s) => (
+            <div
+              key={s.id}
+              className="bg-white p-4 rounded-lg border flex justify-between"
+            >
+
+              {/* LEFT INFO */}
+              <div>
+                <h2 className="font-semibold">{s.name}</h2>
+
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <FaEnvelope /> {s.contact_email}
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <FaPhone /> {s.contact_phone}
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <FaMapMarkerAlt /> {s.location}
+                </div>
+              </div>
+
+              {/* RIGHT */}
+              <div className="flex flex-col items-end gap-2">
+
+                <span
+                  className={`px-2 py-1 text-xs rounded ${
+                    s.status === "On Time"
+                      ? "bg-green-100 text-green-600"
+                      : "bg-red-100 text-red-600"
+                  }`}
+                >
+                  {s.status}
+                </span>
+
+                <p className="text-sm text-gray-500">
+                  Rating: {s.rating}
+                </p>
+
+                <div className="flex gap-3 text-gray-500">
+                  <button onClick={() => handleEdit(s)}>
+                    <FaEdit  />
+                  </button>
+
+                  <button onClick={() => handleDelete(s.id)}>
+                    <FaTrash className="hover:text-red-600" />
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+
+      </div>
+
+      {/* RIGHT PANEL */}
+      <div className="w-1/3">
+
+        {/* 🔥 RECENT ORDERS */}
+        <div className="bg-white p-4 rounded-lg border">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-semibold">Recent Orders</h2>
+
+            <button
+              onClick={() => navigate("/orders")}
+              className="text-blue-600 text-sm hover:underline"
+            >
+              View All
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {orders.map((o) => (
+              <div
+                key={o.id}
+                className="bg-gray-50 p-3 rounded-lg border-l-4 border-blue-500 flex justify-between items-center"
+              >
+                <div>
+                  <p className="font-semibold">{o.order_id}</p>
+                  <p className="text-sm text-gray-600">{o.product}</p>
+                  <p className="text-sm text-gray-400">
+                    {o.quantity} units
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {new Date(o.delivery_date).toDateString()}
+                  </p>
+                </div>
+
+                <span
+                  className={`px-2 py-1 text-xs rounded ${
+                    o.inventory_status === "Available"
+                      ? "bg-green-100 text-green-600"
+                      : "bg-yellow-100 text-yellow-600"
+                  }`}
+                >
+                  {o.inventory_status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* QUICK ACTIONS */}
+        <div className="bg-white p-4 rounded-lg border mt-4">
+          <h2 className="font-semibold mb-2">Quick Actions</h2>
+
+          <button
+            onClick={() => navigate("/orders/new")}
+            className="bg-gray-200 hover:bg-blue-700 hover:text-white p-2 rounded w-full mb-2"
+          >
+            Place New Order
+          </button>
+
+          <button
+            onClick={() => navigate("/orders")}
+            className="border bg-gray-200 hover:bg-blue-700 hover:text-white p-2 rounded w-full"
+          >
+            View All Orders
+          </button>
+        </div>
+
+      </div>
+
+      {/* MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+
+          <div className="bg-white p-6 rounded-lg w-96">
+
+            <h2 className="text-lg font-semibold mb-4">
+              {editId ? "Edit Supplier" : "Add Supplier"}
+            </h2>
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+
+              <input placeholder="Name" className="border p-2 rounded"
+                value={form.name}
+                onChange={(e) =>
+                  setForm({ ...form, name: e.target.value })
+                }
+              />
+
+              <input placeholder="Email" className="border p-2 rounded"
+                value={form.contact_email}
+                onChange={(e) =>
+                  setForm({ ...form, contact_email: e.target.value })
+                }
+              />
+
+              <input placeholder="Phone" className="border p-2 rounded"
+                value={form.contact_phone}
+                onChange={(e) =>
+                  setForm({ ...form, contact_phone: e.target.value })
+                }
+              />
+
+              <input placeholder="Location" className="border p-2 rounded"
+                value={form.location}
+                onChange={(e) =>
+                  setForm({ ...form, location: e.target.value })
+                }
+              />
+
+              <input type="number" placeholder="Rating" className="border p-2 rounded"
+                value={form.rating}
+                onChange={(e) =>
+                  setForm({ ...form, rating: e.target.value })
+                }
+              />
+
+              <select className="border p-2 rounded"
+                value={form.status}
+                onChange={(e) =>
+                  setForm({ ...form, status: e.target.value })
+                }
+              >
+                <option>On Time</option>
+                <option>Delayed</option>
+              </select>
+
+              <div className="flex justify-end gap-2">
+                <button type="button"
+                  onClick={() => setShowModal(false)}
+                  className="bg-gray-300 px-3 py-1 rounded"
+                >
+                  Cancel
+                </button>
+
+                <button className="bg-blue-600 text-white px-3 py-1 rounded">
+                  Save
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -4,6 +4,8 @@ import Dashboard from "./pages/Dashboard";
 import Materials from "./pages/Materials";
 import Requests from "./pages/Requests";
 import Suppliers from "./pages/Suppliers";
+import NewOrder from "./pages/NewOrder"; // ✅ ADD THIS
+import Orders from "./pages/Orders";
 
 function App() {
   return (
@@ -17,6 +19,11 @@ function App() {
             <Route path="/materials" element={<Materials />} />
             <Route path="/requests" element={<Requests />} />
             <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/orders" element={<Orders />} />
+
+            {/* ✅ ADD THIS ROUTE */}
+            <Route path="/orders/new" element={<NewOrder />} />
+
           </Routes>
         </div>
       </div>
