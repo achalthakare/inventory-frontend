@@ -31,16 +31,17 @@ export default function NewOrder() {
     fetchData();
   }, []);
 
-  // ✅ SUBMIT ORDER (MATCHES YOUR DB)
+  // ✅ SUBMIT ORDER
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // 🔥 FIX: use Number() + ===
     const selectedSupplier = suppliers.find(
-      (s) => s.id == form.supplier_id
+      (s) => s.id === Number(form.supplier_id)
     );
 
     const selectedMaterial = materials.find(
-      (m) => m.id == form.material_id
+      (m) => m.id === Number(form.material_id)
     );
 
     if (!selectedSupplier || !selectedMaterial) {
@@ -64,7 +65,7 @@ export default function NewOrder() {
 
       alert("Order placed successfully");
 
-      // ✅ OPTIONAL: update supplier active orders
+      // ✅ Update supplier active orders
       await API.put(`/suppliers/${selectedSupplier.id}`, {
         ...selectedSupplier,
         active_orders: (selectedSupplier.active_orders || 0) + 1,
@@ -150,9 +151,7 @@ export default function NewOrder() {
               Cancel
             </button>
 
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded"
-            >
+            <button className="bg-blue-600 text-white px-4 py-2 rounded">
               Place Order
             </button>
 
